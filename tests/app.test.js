@@ -85,7 +85,28 @@ describe('Automatically generated tests', () => {
 // Manually written tests
 // ---------------------------------------------------------------------------
 describe('Manually written tests', () => {
-    test.todo('8. wrong password shows an error and sets no cookie');
-    test.todo('9. a logged-in non-admin user gets 403 from /admin');
-    test.todo('10. a logged-in user can create a post and it appears on the front page');
+    test('8. wrong password shows an error and sets no cookie', async () => {
+        await request(app).post('/auth/register').type('form').send({ username: 'bob', password: 'rightpass' });
+        const res = await request(app).post('/auth/login').type('form').send({ username: 'bob', password: 'wrongpass' });
+        expect(res.headers['set-cookie']).toBeUndefined();
+        expect(res.text).toContain('Invalid username or password');
+    });
+
+    test('9. a logged-in non-admin user is denied the admin page', async () => {
+        const cookies = await registerAndLogin('charlie', 'charliepass');
+        const res = await request(app).get('/admin').set('Cookie', cookies);
+        expect(res.status).toBe(403);
+        expect(res.text).not.toContain('DISOBEY');
+    });
+
+    test('10. a logged-in user can create a post that appears on the front page', async () => {
+        const cookies = await registerAndLogin('dave', 'davepass');
+        const create = await request(app).post('/new-post').type('form').set('Cookie', cookies)
+            .send({ title: 'Hello', content: 'My first post' });
+        expect(create.status).toBe(302);
+        const front = await request(app).get('/').set('Cookie', cookies);
+        expect(front.status).toBe(200);
+        expect(front.text).toContain('Hello');
+        expect(front.text).toContain('My first post');
+    });
 });
