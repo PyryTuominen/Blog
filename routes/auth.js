@@ -16,7 +16,8 @@ router.post('/login', (req, res) => {
             const sessionId = crypto.createHash('sha256').update(user.username).digest('hex');
             db.run("UPDATE users SET sessionId = ? WHERE username = ?", [sessionId, user.username], (err) => {
                 if (err) throw err;
-                res.cookie('sessionId', sessionId, { httpOnly: true });
+                // DEFECT 4: session cookie is no longer HttpOnly, so client-side JS can read it
+                res.cookie('sessionId', sessionId);
                 console.log('Login successful, sessionId:', sessionId);
                 res.redirect('/');
             });
