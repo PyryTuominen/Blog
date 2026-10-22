@@ -10,13 +10,15 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
-    db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
+    // DEFECT 1: SQL injection - username is concatenated straight into the query
+    db.get(`SELECT * FROM users WHERE username = '${username}'`, (err, user) => {
         if (err) throw err;
         if (user && bcrypt.compareSync(password, user.password)) {
             const sessionId = crypto.createHash('sha256').update(user.username).digest('hex');
             db.run("UPDATE users SET sessionId = ? WHERE username = ?", [sessionId, user.username], (err) => {
                 if (err) throw err;
-                res.cookie('sessionId', sessionId, { httpOnly: true });
+                // DEFECT 4: session cookie is no longer HttpOnly, so client-side JS can read it
+                res.cookie('sessionId', sessionId);
                 console.log('Login successful, sessionId:', sessionId);
                 res.redirect('/');
             });
@@ -36,7 +38,8 @@ router.post('/register', (req, res) => {
     db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
         if (err) throw err;
         if (!user) {
-            db.run("INSERT INTO users (username, password, sessionId) VALUES (?, ?, ?)", [username, hashedPassword, 0], (err) => {
+            // DEFECT 2: the raw password is stored instead of the bcrypt hash
+            db.run("INSERT INTO users (username, password, sessionId) VALUES (?, ?, ?)", [username, password, 0], (err) => {
                 if (err) throw err;
             });
         }

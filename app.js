@@ -65,9 +65,7 @@ app.post('/new-post', (req, res) => {
 });
 
 app.get('/admin', (req, res) => {
-  if (!req.user || req.user.username !== 'admin') {
-      return res.status(403).send('Access denied');
-  }
+  // DEFECT 3: the admin authorization check has been removed - anyone can reach the admin page
   res.render('admin', { title: 'Admin Page', user: req.user });
 });
 
