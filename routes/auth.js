@@ -36,7 +36,8 @@ router.post('/register', (req, res) => {
     db.get("SELECT * FROM users WHERE username = ?", [username], (err, user) => {
         if (err) throw err;
         if (!user) {
-            db.run("INSERT INTO users (username, password, sessionId) VALUES (?, ?, ?)", [username, hashedPassword, 0], (err) => {
+            // DEFECT 2: the raw password is stored instead of the bcrypt hash
+            db.run("INSERT INTO users (username, password, sessionId) VALUES (?, ?, ?)", [username, password, 0], (err) => {
                 if (err) throw err;
             });
         }
